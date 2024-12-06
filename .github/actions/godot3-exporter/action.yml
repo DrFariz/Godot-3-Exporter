@@ -1,0 +1,72 @@
+name: Export Godot 3.x Project
+description: Export Godot 3.x projects to various platforms using GitHub Actions.
+author: DrFariz
+inputs:
+  godot-link:
+    description: "URL to download Godot Headless binary."
+    required: true
+    default: "https://github.com/godotengine/godot/releases/download/3.6-stable/Godot_v3.6-stable_linux_headless.64.zip"
+  templates-link:
+    description: "URL to download Godot Export Templates."
+    required: true
+    default: "https://github.com/godotengine/godot/releases/download/3.6-stable/Godot_v3.6-stable_export_templates.tpz"
+  platform:
+    description: "Target platform to export (e.g., Android, HTML5)."
+    required: true
+    default: "Android"
+  filename:
+    description: "Name of the exported file."
+    required: true
+  path:
+    description: "Template version path (e.g., 3.6.stable)."
+    required: true
+    default: "3.6.stable"
+  user:
+    description: "Username for Android keystore."
+  keypass:
+    description: "Password for the Android keystore."
+    required: false
+outputs:
+  artifact-path:
+    description: "Path to the exported artifact."
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: 📥 Download Godot & Export Templates
+      run: |
+        wget ${{ inputs.godot-link }} -O godot.zip
+        unzip godot.zip
+        sudo mv Godot_* /usr/local/bin/godot
+        chmod +x /usr/local/bin/godot
+        curl -L ${{ inputs.templates-link }} -o godot-templates.tpz
+
+    - name: 📤 Extract Godot Export Templates
+      run: |
+        mkdir -p ~/.local/share/godot/templates/${{ inputs.path }}
+        unzip godot-templates.tpz -d ~/godot-templates
+        mv ~/godot-templates/templates/* ~/.local/share/godot/templates/${{ inputs.path }}/
+        rm -rf ~/godot-templates
+
+    - name: 📱 Set up Android SDK (Only for Android)
+      if: ${{ inputs.platform == 'Android' }}
+      uses: android-actions/setup-android@v3
+
+    - name: 🔑 Generate Keystore (Only for Android)
+      if: ${{ inputs.platform == 'Android' }}
+      run: |
+        keytool -genkey -v -keystore key.keystore -alias ${{ inputs.user }} -keyalg RSA -keysize 2048 -validity 10000 -storepass ${{ inputs.keypass }} -keypass ${{ inputs.keypass }} -dname "CN=Android Export,O=Android,C=US"
+
+    - name: 🛠 Export Game
+      run: |
+        mkdir -p export
+        EXT=$(jq -r ".${{ inputs.platform }}" <<< '{"Android": ".apk", "Windows Desktop": ".exe", "macOS": ".dmg", "Linux/X11": ".x86_64"}')
+        godot --no-window --export "${{ inputs.platform }}" "export/${{ inputs.filename }}${EXT}"
+
+    - name: 💾 Upload artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ inputs.filename }}
+        path: export/
