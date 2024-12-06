@@ -42,6 +42,7 @@ runs:
         sudo mv Godot_* /usr/local/bin/godot
         chmod +x /usr/local/bin/godot
         curl -L ${{ inputs.templates-link }} -o godot-templates.tpz
+      shell: "bash"
 
     - name: 📤 Extract Godot Export Templates
       run: |
@@ -49,6 +50,7 @@ runs:
         unzip godot-templates.tpz -d ~/godot-templates
         mv ~/godot-templates/templates/* ~/.local/share/godot/templates/${{ inputs.path }}/
         rm -rf ~/godot-templates
+      shell: "bash"
 
     - name: 📱 Set up Android SDK (Only for Android)
       if: ${{ inputs.platform == 'Android' }}
@@ -58,12 +60,14 @@ runs:
       if: ${{ inputs.platform == 'Android' }}
       run: |
         keytool -genkey -v -keystore key.keystore -alias ${{ inputs.user }} -keyalg RSA -keysize 2048 -validity 10000 -storepass ${{ inputs.keypass }} -keypass ${{ inputs.keypass }} -dname "CN=Android Export,O=Android,C=US"
+      shell: "bash"
 
     - name: 🛠 Export Game
       run: |
         mkdir -p export
         EXT=$(jq -r ".${{ inputs.platform }}" <<< '{"Android": ".apk", "Windows Desktop": ".exe", "macOS": ".dmg", "Linux/X11": ".x86_64"}')
         godot --no-window --export "${{ inputs.platform }}" "export/${{ inputs.filename }}${EXT}"
+      shell: "bash"
 
     - name: 💾 Upload artifact
       uses: actions/upload-artifact@v3
