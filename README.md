@@ -50,7 +50,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Export Godot Project
-        uses: yourusername/export-godot-action@v1
+        uses: drfariz/godot3-exporter@v1
         with:
           godot-link: "https://github.com/godotengine/godot/releases/download/3.6-stable/Godot_v3.6-stable_linux_headless.64.zip"
           templates-link: "https://github.com/godotengine/godot/releases/download/3.6-stable/Godot_v3.6-stable_export_templates.tpz"
