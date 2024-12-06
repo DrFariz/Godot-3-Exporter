@@ -55,6 +55,7 @@ runs:
     - name: 📱 Set up Android SDK (Only for Android)
       if: ${{ inputs.platform == 'Android' }}
       uses: android-actions/setup-android@v3
+      shell: bash
 
     - name: 🔑 Generate Keystore (Only for Android)
       if: ${{ inputs.platform == 'Android' }}
